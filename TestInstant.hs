@@ -37,6 +37,8 @@ run v p s = let ts = myLLexer s in case p ts of
                           putStrLn s
            Ok  tree -> do putStrLn "\nCompiling\n"
                           compile' tree
+                          putStrLn "\nTree\n"
+                          showTree 2 tree
 
 
 showTree :: (Show Program, Print Program) => Int -> Program -> IO ()

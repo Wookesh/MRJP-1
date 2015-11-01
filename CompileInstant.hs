@@ -58,7 +58,8 @@ prolog program = do
 	outCnt invokeInit
 	epilog
 	out mainMethod
-	outIndent $ limitStack 2
+	stack <- countStack program
+	outIndent $ limitStack stack
 	varCount <- countLocals program
 	outIndent $ limitLocals (varCount + 2)
 
@@ -122,6 +123,40 @@ getLocals locals (SAss ident expr) = do
 getLocals locals _ = do
 	return locals
 
+countStack (Prog stmts) = do
+	stack <- foldM getStack 0 stmts
+	return stack
+
+getStack stack (SAss _ expr) = do
+	newStack <- getStackE expr
+	return $ max stack newStack
+
+getStack stack (SExp expr) = do
+	newStack <- getStackE expr
+	return $ max stack newStack
+
+getStackE (ExpAdd e1 e2) = do
+	s1 <- getStackE e1
+	s2 <- getStackE e2
+	return $ max (s1 + 1) (s2 + 1)
+
+getStackE (ExpSub e1 e2) = do
+	s1 <- getStackE e1
+	s2 <- getStackE e2
+	return $ max (s1 + 1) (s2 + 1)
+
+getStackE (ExpMul e1 e2) = do
+	s1 <- getStackE e1
+	s2 <- getStackE e2
+	return $ max (s1 + 1) (s2 + 1)
+
+getStackE (ExpDiv e1 e2) = do
+	s1 <- getStackE e1
+	s2 <- getStackE e2
+	return $ max (s1 + 1) (s2 + 1)
+
+getStackE _ = do
+	return 0
 
 -------------
 -- Program --
@@ -176,10 +211,9 @@ compileStmt inLine (SExp expr) = do
 -- (a + b) + c != a + (b + c)
 
 compileExpr (ExpAdd expr1 expr2) = do
-	compileExpr expr1
 	compileExpr expr2
+	compileExpr expr1
 	outCnt "iadd"
-
 
 compileExpr (ExpSub expr1 expr2) = do
 	compileExpr expr1
@@ -206,11 +240,6 @@ compileExpr (ExpVar ident) = do
 --------------
 -- Optimize --
 --------------
-
-optimize (ExpAdd e1 e2) = do
-	opt1 <- optimize e1
-	opt2 <- optimize e2
-	return (ExpAdd opt2 opt1)
 
 optimize s = do
 	return s
