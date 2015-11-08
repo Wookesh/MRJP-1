@@ -11,7 +11,7 @@ import ParInstant
 import SkelInstant
 import PrintInstant
 import AbsInstant
-import CompileInstant
+import LLVM
 
 
 
@@ -36,7 +36,7 @@ run v p s = let ts = myLLexer s in case p ts of
                           putStrV v $ show ts
                           putStrLn s
            Ok  tree -> do putStrLn "\nCompiling\n"
-                          compile' tree
+                          compile tree
                           putStrLn "\nTree\n"
                           showTree 2 tree
 
