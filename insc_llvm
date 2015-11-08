@@ -6,3 +6,4 @@ prog=$(echo $file | sed -r 's/(.*)\.ins/\1.bc/g')
 llvm-as -o tmp.bc $lib
 llvm-as -o runtime.bc runtime.ll
 llvm-link runtime.bc tmp.bc -o $prog
+rm tmp.bc
