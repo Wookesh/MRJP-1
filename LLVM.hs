@@ -83,7 +83,7 @@ printLine string = do
 
 llvm action val1 val2 = do
 	nextReg <- getNextReg
-	printIndent $ "%" ++ (show nextReg) ++ " = " ++ action ++ " nsw i32 " ++ (show val1) ++ ", " ++ (show val2)
+	printIndent $ "%" ++ (show nextReg) ++ " = " ++ action ++ " i32 " ++ (show val1) ++ ", " ++ (show val2)
 	return (Rg nextReg)
 
 printVal reg = do
@@ -131,25 +131,25 @@ compileStmt (SExp expr) = do
 compileExpr (ExpAdd expr1 expr2) = do
 	val1 <- compileExpr expr1
 	val2 <- compileExpr expr2
-	newReg <- llvm "add" val1 val2
+	newReg <- llvm "add nsw" val1 val2
 	return newReg
 
 compileExpr (ExpMul expr1 expr2) = do
 	val1 <- compileExpr expr1
 	val2 <- compileExpr expr2
-	newReg <- llvm "mul" val1 val2
+	newReg <- llvm "mul nsw" val1 val2
 	return newReg
 
 compileExpr (ExpSub expr1 expr2) = do
 	val1 <- compileExpr expr1
 	val2 <- compileExpr expr2
-	newReg <- llvm "sub" val1 val2
+	newReg <- llvm "sub nsw" val1 val2
 	return newReg
 
 compileExpr (ExpDiv expr1 expr2) = do
 	val1 <- compileExpr expr1
 	val2 <- compileExpr expr2
-	newReg <- llvm "div" val1 val2
+	newReg <- llvm "sdiv" val1 val2
 	return newReg
 
 compileExpr (ExpLit value) = do

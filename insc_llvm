@@ -1,2 +1,8 @@
 #!/bin/bash
-./Compiler -l $@
+file=$1
+lib=$(echo $file | sed -r 's/(.*)\.ins/\1.ll/g')
+prog=$(echo $file | sed -r 's/(.*)\.ins/\1.bc/g')
+./Compiler -l $file
+llvm-as -o tmp.bc $lib
+llvm-as -o runtime.bc runtime.ll
+llvm-link runtime.bc tmp.bc -o $prog
