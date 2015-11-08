@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module CompileInstant where
+module JVM where
 
 import AbsInstant
 import Data.Map as M
@@ -14,7 +14,7 @@ type Line = Integer
 type Doc = [ShowS] -> [ShowS]
 
 type Env = (M.Map Ident Integer)
-data Store = ST (Env, Line, Loc) deriving (Eq,Ord,Show)
+data Store = ST (Env, Line, Loc, FilePath) deriving (Eq,Ord,Show)
 
 
 -------------------------
@@ -43,7 +43,7 @@ store loc = "istore_" ++ (show loc)
 constInt int = if int > 5 then "bipush " ++ (show int)
 				else "iconst_" ++ (show int)
 
-epilog = do
+methodEnd = do
 	outCnt ret
 	out end
 
@@ -56,7 +56,7 @@ prolog program = do
 	outIndent $ line 1
 	outCnt "aload_0"
 	outCnt invokeInit
-	epilog
+	methodEnd
 	out mainMethod
 	stack <- countStack program
 	outIndent $ limitStack stack
@@ -68,17 +68,19 @@ prolog program = do
 ------------
 
 createFile = do
-	lift $ writeFile "inst_jvm.j" "; instant compiler\n"
+	ST (_,_,_, file) <- get
+	lift $ writeFile file "; instant jvm compiler\n"
 
 out string = do 
-	lift $ appendFile "inst_jvm.j" (string ++ "\n")
+	ST (_,_,_, file) <- get
+	lift $ appendFile file (string ++ "\n")
 
 outIndent string = do
 	out $ "\t" ++ string
 
 outCnt string = do
-	ST (s, lineNo, n) <- get
-	put $ ST (s, lineNo + 1, n)
+	ST (s, lineNo, n, f) <- get
+	put $ ST (s, lineNo + 1, n, f)
 	outIndent $ prepareLine lineNo string
 
 prepareLine i line = (show i) ++ ": " ++ line
@@ -87,23 +89,23 @@ prepareLine i line = (show i) ++ ": " ++ line
 clearStore :: Env
 clearStore = M.empty
 
-initialStore :: Store
-initialStore = ST (clearStore, 0, 2)
+initialStore :: FilePath -> Store
+initialStore f = ST (clearStore, 0, 2, f)
 
 -------------------------------------
 -- Environment and Store functions --
 -------------------------------------
 
 alloc ident = do
-	ST (store, l, nextLoc) <- get
+	ST (store, l, nextLoc, f) <- get
 	case M.lookup ident store of
 		(Just loc) -> return loc
 		Nothing -> do
-			put $ ST (M.insert ident nextLoc store, l, nextLoc + 1)
+			put $ ST (M.insert ident nextLoc store, l, nextLoc + 1, f)
 			return nextLoc
 
 getLoc ident = do
-	ST (store, _, _) <- get
+	ST (store, _, _, _) <- get
 	case M.lookup ident store of 
 		(Just val) -> return val
 		Nothing -> fail $ "Variable " ++ (show ident) ++ " is not defined.\n"
@@ -162,21 +164,13 @@ getStackE _ = do
 -- Program --
 -------------
 
-class Compile a where
-	compile :: a -> String
-
-
-compile' p = evalStateT (compileProg p) initialStore
-
--- instance Compile Program where
--- 	compile ast = case ast of
--- 		Prog stmts -> 
+compile p f = evalStateT (compileProg p) $ initialStore f
 
 compileProg prog@(Prog stmts) = do
 	createFile
 	prolog prog
 	lineCnt <- foldM compileStmt 2 stmts
-	epilog
+	methodEnd
 	return ()
 
 

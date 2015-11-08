@@ -19,29 +19,29 @@ instance Show RegVal where
 	show (Rg reg) = "%" ++ show reg
 
 type Env = S.Set Ident
-data Store = ST (Env, Reg) deriving (Eq, Ord, Show)
+data Store = ST (Env, Reg, FilePath) deriving (Eq, Ord, Show)
 
 ----------------
 -- Store LLVM --
 ----------------
 
-clearStore :: Store
-clearStore = ST (clearEnv, 1)
+clearStore :: FilePath -> Store
+clearStore f = ST (clearEnv, 1, f)
 
 clearEnv :: Env
 clearEnv = S.empty
 
 alloc ident = do
-	ST (env, r) <- get
+	ST (env, r, f) <- get
 	case S.member ident env of
 		True -> return (Var ident)
 		False -> do
-			put $ ST (S.insert ident env, r)
+			put $ ST (S.insert ident env, r, f)
 			printAlloca (Var ident)
 			return (Var ident)
 
 load ident = do
-	ST (env, r) <- get
+	ST (env, r, f) <- get
 	case S.member ident env of
 		True -> do
 			reg <- getNextReg
@@ -53,8 +53,8 @@ store ident value = do
 	printStore (Var ident) value
 
 getNextReg = do
-	ST (e, reg) <- get
-	put $ ST (e, reg + 1)
+	ST (e, reg, f) <- get
+	put $ ST (e, reg + 1, f)
 	return reg
 
 -----------------
@@ -73,8 +73,13 @@ printLoad ident reg = do
 printIndent string = do
 	printLine $ "\t" ++ string
 
+createFile = do
+	ST (_, _, file) <- get
+	lift $ writeFile file "; instant llvm compiler\n"
+
 printLine string = do
-	lift $ appendFile "inst_llvm.ll" $ string ++ "\n"
+	ST (e, r, file) <- get
+	lift $ appendFile file $ string ++ "\n"
 
 llvm action val1 val2 = do
 	nextReg <- getNextReg
@@ -88,7 +93,7 @@ printVal reg = do
 -- Program LLVM --
 ------------------
 
-compile p = evalStateT (compileProg p) clearStore
+compile p f = evalStateT (compileProg p) $ clearStore f
 
 prolog = do
 	printLine $ "declare void @printInt(i32)"
@@ -99,6 +104,7 @@ epilog = do
 	printLine $ "}"
 
 compileProg (Prog stmts) = do
+	createFile
 	prolog
 	forM_ stmts compileStmt
 	epilog
