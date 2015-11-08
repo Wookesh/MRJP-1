@@ -1,8 +1,5 @@
 all:
-	happy -gca ParInstant.y
-	alex -g LexInstant.x
-	latex DocInstant.tex; dvips DocInstant.dvi -o DocInstant.ps
-	ghc --make TestInstant.hs -o TestInstant
+	ghc --make Compiler.hs -o Compiler
 clean:
 	-rm -f *.log *.aux *.hi *.o *.dvi
 	-rm -f DocInstant.ps
