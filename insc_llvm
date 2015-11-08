@@ -1,9 +1,10 @@
 #!/bin/bash
+path=$(dirname $0)
 file=$1
 lib=$(echo $file | sed -r 's/(.*)\.ins/\1.ll/g')
 prog=$(echo $file | sed -r 's/(.*)\.ins/\1.bc/g')
-./Compiler -l $file
+./$path/Compiler -l $file
 llvm-as -o tmp.bc $lib
-llvm-as -o runtime.bc runtime.ll
+llvm-as -o runtime.bc $path/runtime.ll
 llvm-link runtime.bc tmp.bc -o $prog
 rm tmp.bc

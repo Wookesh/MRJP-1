@@ -1,2 +1,6 @@
 #!/bin/bash
-./Compiler -j $@
+path=$(dirname $0)
+file=$1
+lib=$(echo $file | sed -r 's/(.*)\.ins/\1.j/g')
+./$path/Compiler -j $file
+java -jar $path/lib/jasmin.jar $lib -d .

@@ -8,6 +8,7 @@ import Data.Set as S
 import Control.Monad.State
 import Data.Array
 import Data.Char
+import System.FilePath.Posix (dropExtension)
 
 type Loc = Integer
 type Line = Integer 
@@ -31,7 +32,7 @@ ret = "return"
 end = ".end method\n"
 printVar = 1
 
-classDefinition className = ".class  public " ++ className
+classDefinition className = ".class public " ++ className
 superDefinition = ".super java/lang/Object"
 
 initMethod = ".method public <init>()V"
@@ -48,7 +49,8 @@ methodEnd = do
 	out end
 
 prolog program = do
-	out $ classDefinition "Auto"
+	ST (_, _, _, file) <- get
+	out $ classDefinition $ dropExtension file
 	out superDefinition
 	out initMethod
 	outIndent $ limitStack 1
