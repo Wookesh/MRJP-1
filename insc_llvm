@@ -5,6 +5,6 @@ lib=$(echo $file | sed -r 's/(.*)\.ins/\1.ll/g')
 prog=$(echo $file | sed -r 's/(.*)\.ins/\1.bc/g')
 ./$path/Compiler -l $file
 llvm-as -o tmp.bc $lib
-llvm-as -o runtime.bc $path/runtime.ll
+llvm-as -o runtime.bc $path/lib/runtime.ll
 llvm-link runtime.bc tmp.bc -o $prog
 rm tmp.bc

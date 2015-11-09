@@ -1,5 +1,5 @@
 all:
-	ghc --make src/Compiler.hs -o Compiler
+	ghc --make src/*.hs -o Compiler
 clean:
 	-rm -f src/*.hi src/*.o
 distclean: clean
