@@ -30,24 +30,20 @@ putStrV :: Verbosity -> String -> IO ()
 putStrV v s = if v > 1 then putStrLn s else return ()
 
 runFile :: (Print Program, Show Program) => Verbosity -> ParseFun Program -> Compiler -> FilePath  -> IO ()
-runFile v p c f = putStrLn f >> readFile f >>= run v p c f
+runFile v p c f = readFile f >>= run v p c f
 
 run :: (Print Program, Show Program) => Verbosity -> ParseFun Program -> Compiler -> FilePath -> String -> IO ()
 run v p c f s = let ts = myLLexer s in case p ts of
-           Bad s    -> do putStrLn "\nParse              Failed...\n"
+           Bad s    -> do putStrLn "Parse Failed...\n"
                           putStrV v "Tokens:"
                           putStrV v $ show ts
                           putStrLn s
-           Ok  tree -> do putStrLn "\nCompiling\n"
+           Ok  tree -> do
                           case c of 
                             JVM -> do
                               J.compile tree $ replaceExtension f "j"
-                              putStrLn "\nTree\n"
-                              showTree 2 tree
                             LLVM -> do
                               L.compile tree $ replaceExtension f "ll"
-                              putStrLn "\nTree\n"
-                              showTree 2 tree
 
 
 showTree :: (Show Program, Print Program) => Int -> Program -> IO ()
@@ -59,7 +55,6 @@ showTree v tree
 main :: IO ()
 main = do args <- getArgs
           case args of
-            --[] -> hGetContents stdin >>= run 2 pProgram LLVM
             "-j":fs -> mapM_ (runFile 0 pProgram JVM) fs
             "-l":fs -> mapM_ (runFile 0 pProgram LLVM) fs
 

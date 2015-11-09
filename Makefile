@@ -1,5 +1,7 @@
 all:
 	ghc --make src/*.hs -o Compiler
+	chmod +x insc_llvm
+	chmod +x insc_jvm
 clean:
 	-rm -f src/*.hi src/*.o
 distclean: clean
